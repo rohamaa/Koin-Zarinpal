@@ -2,7 +2,6 @@
 
 namespace Rohama\Koin\Zarinpal;
 
-use GuzzleHttp\Client;
 use Psr\Http\Message\ResponseInterface;
 use Rohama\Koin\Support\Currency;
 use Rohama\Koin\Support\PaymentStatus;
@@ -46,14 +45,14 @@ class ZarinpalGateway implements PaymentGateway, RefundableGateway, UnverifiedGa
         $this->paymentConstruct($apiKey, $callbackUrl, $sandbox, $extra, $refundable);
 
         Translator::register('Koin-' . self::name, dirname(__DIR__) . '/lang');
-        $this->client = new Client([
-            'base_uri' => $this->sandbox
+    }
+
+
+    protected function baseUri(): string
+    {
+        return $this->sandbox
                 ? 'https://sandbox.zarinpal.com'
-                : 'https://payment.zarinpal.com',
-            'timeout' => 15,
-            'connect_timeout' => 10,
-            'http_errors' => false,
-        ]);
+                : 'https://payment.zarinpal.com';
     }
 
     public static function configFields(): array
@@ -107,8 +106,8 @@ class ZarinpalGateway implements PaymentGateway, RefundableGateway, UnverifiedGa
 
         $rial = Currency::toRial($currency ?? Currency::RIAL, $amount);
 
-        $response = $this->client()->post('/pg/v4/payment/request.json', [
-            'json' => array_filter(array_merge([
+        $response = $this->client->post('/pg/v4/payment/request.json', [
+                'json' => array_filter(array_merge([
                 'merchant_id' => $this->apiKey,
                 'amount' => $rial,
                 'description' => $description,
@@ -119,7 +118,7 @@ class ZarinpalGateway implements PaymentGateway, RefundableGateway, UnverifiedGa
                     'order_id' => $orderId !== '' ? $orderId : null,
                 ]),
             ], $extra)),
-        ]);
+            ]);
         $data = $this->decode($response);
 
         $code = (int) ($data['data']['code'] ?? -1);
@@ -174,13 +173,13 @@ class ZarinpalGateway implements PaymentGateway, RefundableGateway, UnverifiedGa
 
         $rial = Currency::toRial($currency ?? Currency::RIAL, $amount);
 
-        $response = $this->client()->post('/pg/v4/payment/verify.json', [
-            'json' => array_filter(array_merge([
+        $response = $this->client->post('/pg/v4/payment/verify.json', [
+                'json' => array_filter(array_merge([
                 'merchant_id' => $this->apiKey,
                 'amount' => $rial,
                 'authority' => $transactionId,
             ], $extra)),
-        ]);
+            ]);
         $data = $this->decode($response);
 
         $code = (int) ($data['data']['code'] ?? -1);
@@ -229,12 +228,12 @@ class ZarinpalGateway implements PaymentGateway, RefundableGateway, UnverifiedGa
             throw new InvalidRequestException('Zarinpal refunds are only available for gateways constructed with refundable: true.', gateway: self::name);
         }
 
-        $response = $this->client()->post('/pg/v4/payment/reverse.json', [
-            'json' => array_filter(array_merge([
+        $response = $this->client->post('/pg/v4/payment/reverse.json', [
+                'json' => array_filter(array_merge([
                 'merchant_id' => $this->apiKey,
                 'authority' => $transactionId,
             ], $extra)),
-        ]);
+            ]);
         $data = $this->decode($response);
 
         $code = (int) ($data['data']['code'] ?? -1);
@@ -255,11 +254,11 @@ class ZarinpalGateway implements PaymentGateway, RefundableGateway, UnverifiedGa
 
     public function unverified(): UnverifiedResponse
     {
-        $response = $this->client()->post('/pg/v4/payment/unVerified.json', [
-            'json' => [
+        $response = $this->client->post('/pg/v4/payment/unVerified.json', [
+                'json' => [
                 'merchant_id' => $this->apiKey,
-            ],
-        ]);
+        ],
+            ]);
         $data = $this->decode($response);
 
         $code = (int) ($data['data']['code'] ?? -1);
@@ -285,13 +284,13 @@ class ZarinpalGateway implements PaymentGateway, RefundableGateway, UnverifiedGa
 
         $rial = Currency::toRial($currency ?? Currency::RIAL, $amount);
 
-        $response = $this->client()->post('/pg/v4/payment/feeCalculation.json', [
-            'json' => [
+        $response = $this->client->post('/pg/v4/payment/feeCalculation.json', [
+                'json' => [
                 'merchant_id' => $this->apiKey,
                 'amount' => $rial,
                 'currency' => 'IRR',
-            ],
-        ]);
+        ],
+            ]);
         $data = $this->decode($response);
 
         $code = (int) ($data['data']['code'] ?? -1);

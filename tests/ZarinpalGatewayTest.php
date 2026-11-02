@@ -1,10 +1,10 @@
 <?php
 
-use GuzzleHttp\Client;
-use GuzzleHttp\Handler\MockHandler;
 use GuzzleHttp\HandlerStack;
+use GuzzleHttp\Handler\MockHandler;
 use GuzzleHttp\Middleware;
 use GuzzleHttp\Psr7\Response;
+use Rohama\Koin\Http\GuzzleClient;
 use Rohama\Koin\Support\Currency;
 use Rohama\Koin\Exception\InvalidRequestException;
 use Rohama\Koin\Exception\PaymentException;
@@ -58,7 +58,7 @@ final class ZarinpalGatewayTest extends TestCase
         $mock = new MockHandler([
             new Response(200, ['Content-Type' => 'application/json'], json_encode(['data' => ['code' => 100, 'ref_id' => 'ref1']])),
         ]);
-        $client = new Client(['handler' => $mock]);
+        $client = new GuzzleClient(['handler' => $mock]);
 
         $gateway = new ZarinpalGateway('k');
         $gateway->setClient($client);
@@ -154,9 +154,11 @@ final class ZarinpalGatewayTest extends TestCase
         $stack->push(Middleware::history($container));
 
         $gateway = new ZarinpalGateway('k', callbackUrl: 'https://example.com/cb', sandbox: $sandbox);
-        $baseUri = (string) $gateway->client()->getConfig('base_uri');
+        $ref = new ReflectionObject($gateway->client());
+        $pc = $ref->getProperty('config');
+        $baseUri = (string) $pc->getValue($gateway->client())['base_uri'];
 
-        $gateway->setClient(new Client([
+        $gateway->setClient(new GuzzleClient([
             'base_uri' => $baseUri,
             'handler' => $stack,
         ]));

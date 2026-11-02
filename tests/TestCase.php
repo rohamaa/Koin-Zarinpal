@@ -1,6 +1,6 @@
 <?php
+use Rohama\Koin\Http\GuzzleClient;
 
-use GuzzleHttp\Client;
 use GuzzleHttp\Handler\MockHandler;
 use GuzzleHttp\Psr7\Response;
 
@@ -10,7 +10,7 @@ use GuzzleHttp\Psr7\Response;
  */
 abstract class TestCase extends PHPUnit\Framework\TestCase
 {
-    protected function mockHttp(array $responses): Client
+    protected function mockHttp(array $responses): GuzzleClient
     {
         $queue = [];
 
@@ -18,6 +18,6 @@ abstract class TestCase extends PHPUnit\Framework\TestCase
             $queue[] = new Response($status, ['Content-Type' => 'application/json'], json_encode($payload));
         }
 
-        return new Client(['handler' => new MockHandler($queue)]);
+        return new GuzzleClient(['handler' => new MockHandler($queue)]);
     }
 }
